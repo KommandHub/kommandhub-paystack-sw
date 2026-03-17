@@ -1,0 +1,51 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/6.7/src/Core/System/SystemConfig/Schema/config.xsd">
+
+    <card>
+        <title>Live configuration</title>
+
+        <input-field type="password">
+            <name>apiSecretKey</name>
+            <label>Secret Key</label>
+            <helpText>
+                Your Paystack secret API key. Keep this secure and never share it publicly.
+            </helpText>
+            <copyable>true</copyable>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Sandbox configuration</title>
+
+        <input-field type="bool">
+            <name>enableSandbox</name>
+            <label>Enable Sandbox</label>
+            <helpText>
+                Enable this option to use Paystack's sandbox environment for testing payments.
+            </helpText>
+        </input-field>
+
+        <input-field type="password">
+            <name>apiSecretKeySandbox</name>
+            <label>Secret Key</label>
+            <helpText>
+                Your Paystack secret API key. Keep this secure and never share it publicly.
+            </helpText>
+            <copyable>true</copyable>
+        </input-field>
+    </card>
+
+    <card>
+        <title>Debugging</title>
+
+        <input-field type="bool">
+            <name>enableDebugging</name>
+            <label>Enable error logging</label>
+            <defaultValue>false</defaultValue>
+            <helpText>
+                Enable detailed error logging for debugging purposes. Disable in production environments.
+            </helpText>
+        </input-field>
+    </card>
+</config>

@@ -1,0 +1,64 @@
+{
+    "name": "kommandhub/paystack-sw",
+    "description": "Integrates the Paystack payment gateway into Shopware 6.",
+    "type": "shopware-platform-plugin",
+    "license": "MIT",
+    "keywords": [
+        "shopware",
+        "shopware6",
+        "plugin",
+        "payment",
+        "paystack",
+        "gateway",
+        "e-commerce",
+        "africa",
+        "kommandhub"
+    ],
+    "autoload": {
+        "psr-4": {
+            "Kommandhub\\PaystackSW\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Kommandhub\\PaystackSW\\Tests\\": "tests/"
+        }
+    },
+    "authors": [
+        {
+            "name": "Kommandhub Limited",
+            "email": "admin@kommandhub.com",
+            "role": "Developer"
+        }
+    ],
+    "version": "1.0.1",
+    "require": {
+        "shopware/core": "~6.6.0 || ~6.7.0",
+        "kommandhub/paystack": "^1.0"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^11.5",
+        "shopware/dev-tools": "^1.5",
+        "friendsofphp/php-cs-fixer": "^3.94",
+        "phpstan/phpstan": "^2.1",
+        "rregeer/phpunit-coverage-check": "^0.3.1"
+    },
+    "extra": {
+        "shopware-plugin-class": "Kommandhub\\PaystackSW\\KommandhubPaystackSW",
+        "label": {
+            "de-DE": "Paystack für Shopware",
+            "en-GB": "Paystack for Shopware",
+            "fr-FR": "Paystack pour Shopware"
+        },
+        "description": {
+            "de-DE": "Integriert die Paystack-Zahlungs-Gateway in Shopware 6.",
+            "en-GB": "Integrates the Paystack payment gateway into Shopware 6.",
+            "fr-FR": "Intègre la passerelle de paiement Paystack dans Shopware 6."
+        }
+    },
+    "config": {
+        "allow-plugins": {
+            "symfony/runtime": true
+        }
+    }
+}
