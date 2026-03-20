@@ -5,19 +5,17 @@ declare(strict_types=1);
 namespace Kommandhub\PaystackSW\Checkout\Payment;
 
 use Kommandhub\Paystack\Exceptions\PaystackException;
+use Kommandhub\PaystackSW\Util\PaystackConstants;
 use Kommandhub\PaystackSW\Service\Config;
+use Kommandhub\PaystackSW\Service\OrderTransactionService;
 use Kommandhub\PaystackSW\Service\PayloadBuilder;
 use Kommandhub\PaystackSW\Service\TransactionService;
 use Psr\Log\LoggerInterface;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionEntity;
 use Shopware\Core\Checkout\Order\Aggregate\OrderTransaction\OrderTransactionStateHandler;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\AbstractPaymentHandler;
-use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\Criteria;
 use Shopware\Core\Framework\Struct\Struct;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -28,18 +26,10 @@ use Symfony\Component\HttpFoundation\Request;
  * This class implements the necessary methods to initialize payments, handle callbacks from Paystack, and update
  * the order transaction state accordingly. It also manages custom fields to store Paystack transaction details.
  */
-class PaystackPaymentHandler extends AbstractPaymentHandler
+class PaystackPaymentHandler extends AbstractPaystackPaymentHandler
 {
-    public const FIELD_REFERENCE = 'paystack_reference';
-    public const FIELD_TRANSACTION_ID = 'paystack_transaction_id';
-    public const FIELD_PAYMENT_TYPE = 'paystack_payment_type';
-    public const FIELD_TRANSACTION_FEE = 'paystack_transaction_fee';
-    public const FIELD_AMOUNT = 'paystack_amount';
-    public const FIELD_CURRENCY = 'paystack_currency';
-    public const FIELD_VERIFIED_AT = 'paystack_verified_at';
-
     public function __construct(
-        private readonly EntityRepository $orderTransactionRepository,
+        private readonly OrderTransactionService $orderTransactionService,
         private readonly TransactionService $transactionService,
         private readonly PayloadBuilder $payloadBuilder,
         private readonly OrderTransactionStateHandler $transactionStateHandler,
@@ -48,15 +38,22 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
     ) {
     }
 
-    public function supports(PaymentHandlerType $type, string $paymentMethodId, Context $context): bool
-    {
-        return false;
-    }
-
+    /**
+     * Initializes the payment process by preparing the payload and redirecting to Paystack's checkout page.
+     *
+     * @param Request $request The HTTP request object containing request data.
+     * @param PaymentTransactionStruct $transaction The payment transaction struct from Shopware.
+     * @param Context $context The Shopware context for the operation.
+     * @param Struct|null $validateStruct Optional struct for additional validation (not used in this implementation).
+     *
+     * @return RedirectResponse|null A redirect response to Paystack's checkout page or null if initialization fails.
+     *
+     * @throws PaymentException If there is an error during payment initialization or communication with Paystack.
+     */
     public function pay(Request $request, PaymentTransactionStruct $transaction, Context $context, ?Struct $validateStruct): ?RedirectResponse
     {
         // 1. Retrieve the full order transaction entity including associated order and customer data.
-        $orderTransaction = $this->getOrderTransaction($transaction->getOrderTransactionId(), $context);
+        $orderTransaction = $this->orderTransactionService->get($transaction->getOrderTransactionId(), $context);
 
         try {
             // 2. Prepare the payment payload for Paystack initialization.
@@ -64,14 +61,15 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
         } catch (\RuntimeException $e) {
             // Handle cases where required order data might be missing.
             if ($this->config->getBool('enableDebugging', null)) {
-                $this->logger->error($e->getMessage(), [
+                $this->logger->error('Failed to build payment payload for Paystack.', [
                     'transaction_id' => $transaction->getOrderTransactionId(),
+                    'error' => $e->getMessage(),
                 ]);
             }
 
             throw PaymentException::asyncProcessInterrupted(
                 $transaction->getOrderTransactionId(),
-                $e->getMessage()
+                'Unable to prepare payment data: ' . $e->getMessage()
             );
         }
 
@@ -83,13 +81,13 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
             if (($response['status'] ?? '') !== true) {
                 throw PaymentException::asyncProcessInterrupted(
                     $transaction->getOrderTransactionId(),
-                    'Failed to initialize payment with Paystack: ' . ($response['message'] ?? 'Unknown error')
+                    'Paystack declined to initialize the payment: ' . ($response['message'] ?? 'No reason provided')
                 );
             }
 
             // Log initialization success if debugging is enabled.
             if ($this->config->getBool('enableDebugging', null)) {
-                $this->logger->info('Payment initialized with Paystack', [
+                $this->logger->info('Paystack payment session initialized successfully.', [
                     'transaction_id' => $transaction->getOrderTransactionId(),
                     'paystack_response' => $response,
                 ]);
@@ -99,7 +97,7 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
             if (!isset($response['data']['authorization_url'])) {
                 throw PaymentException::asyncProcessInterrupted(
                     $transaction->getOrderTransactionId(),
-                    'Failed to initialize payment with Paystack: authorization_url is missing'
+                    'Paystack did not return a checkout URL. Please try again or contact support.'
                 );
             }
 
@@ -108,15 +106,15 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
             // Handle network errors or API-specific failures.
             // @codeCoverageIgnoreStart
             if ($this->config->getBool('enableDebugging', null)) {
-                $this->logger->error('Error initializing payment with Paystack', [
+                $this->logger->error('Communication error with Paystack during payment initialization.', [
                     'transaction_id' => $transaction->getOrderTransactionId(),
-                    'error_message' => $e->getMessage(),
+                    'error' => $e->getMessage(),
                 ]);
             }
             // @codeCoverageIgnoreEnd
             throw PaymentException::asyncProcessInterrupted(
                 $transaction->getOrderTransactionId(),
-                'An error occurred during the communication with external payment gateway' . PHP_EOL . $e->getMessage()
+                'A communication error occurred with the payment gateway. Please try again.' . PHP_EOL . $e->getMessage()
             );
         }
     }
@@ -135,7 +133,7 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
     public function finalize(Request $request, PaymentTransactionStruct $transaction, Context $context): void
     {
         // 1. Retrieve the order transaction.
-        $orderTransaction = $this->getOrderTransaction($transaction->getOrderTransactionId(), $context);
+        $orderTransaction = $this->orderTransactionService->get($transaction->getOrderTransactionId(), $context);
 
         // 2. Extract query parameters from the callback URL (e.g., 'reference').
         $queryParams = $request->query->all();
@@ -164,7 +162,7 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
 
         if (!$reference) {
             if ($this->config->getBool('enableDebugging', null)) {
-                $this->logger->error('Missing reference parameter in payment verification callback', [
+                $this->logger->error('Payment callback received without a transaction reference.', [
                     'transaction_id' => $orderTransaction->getId(),
                     'query_params' => $queryParams,
                 ]);
@@ -178,20 +176,20 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
         // 3. Validate the verification response status.
         if (($verificationResult['status'] ?? '') !== true) {
             if ($this->config->getBool('enableDebugging', null)) {
-                $this->logger->error('Payment verification failed', [
+                $this->logger->error('Paystack payment verification failed.', [
                     'transaction_id' => $orderTransaction->getId(),
                     'verification_result' => $verificationResult,
                 ]);
             }
             throw PaymentException::asyncFinalizeInterrupted(
                 $orderTransaction->getId(),
-                $verificationResult['message'] ?? 'Payment verification failed'
+                'Payment could not be verified: ' . ($verificationResult['message'] ?? 'No reason provided')
             );
         }
 
         // Log success if debugging is enabled.
         if ($this->config->getBool('enableDebugging', null)) {
-            $this->logger->info('Payment verification successful', [
+            $this->logger->info('Paystack payment verified successfully.', [
                 'transaction_id' => $orderTransaction->getId(),
                 'verification_result' => $verificationResult,
             ]);
@@ -220,24 +218,22 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
         $this->transactionStateHandler->paid($transaction->getOrderTransactionId(), $context);
 
         // Update the order transaction with custom fields built from the payment gateway response and verification result.
-        $this->orderTransactionRepository->update([[
-            'id' => $transaction->getOrderTransactionId(),
-            'customFields' => [
-                self::FIELD_REFERENCE       => $queryParams['reference'] ?? null,
-                self::FIELD_TRANSACTION_ID  => $verificationResult['data']['id'] ?? null,
-                self::FIELD_PAYMENT_TYPE    => $verificationResult['data']['channel'] ?? null,
-                self::FIELD_TRANSACTION_FEE => isset($verificationResult['data']['fees']) ? ($verificationResult['data']['fees'] / 100) : null,
-                self::FIELD_AMOUNT          => isset($verificationResult['data']['amount']) ? ($verificationResult['data']['amount'] / 100) : null,
-                self::FIELD_CURRENCY        => $verificationResult['data']['currency'] ?? null,
-                self::FIELD_VERIFIED_AT     => (new \DateTime())->format('Y-m-d H:i:s'),
-            ],
-        ]], $context);
+        $this->orderTransactionService->updateCustomFields($transaction->getOrderTransactionId(), [
+            PaystackConstants::FIELD_REFERENCE       => $queryParams['reference'] ?? null,
+            PaystackConstants::FIELD_TRANSACTION_ID  => $verificationResult['data']['id'] ?? null,
+            PaystackConstants::FIELD_PAYMENT_TYPE    => $verificationResult['data']['channel'] ?? null,
+            PaystackConstants::FIELD_TRANSACTION_FEE => isset($verificationResult['data']['fees']) ? ($verificationResult['data']['fees'] / 100) : null,
+            PaystackConstants::FIELD_AMOUNT          => isset($verificationResult['data']['amount']) ? ($verificationResult['data']['amount'] / 100) : null,
+            PaystackConstants::FIELD_CURRENCY        => $verificationResult['data']['currency'] ?? null,
+            PaystackConstants::FIELD_VERIFIED_AT     => (new \DateTime())->format('Y-m-d H:i:s'),
+        ], $context);
 
         // If debugging is enabled in the plugin configuration, log payment finalization details for troubleshooting.
         if ($this->config->getBool('enableDebugging', $orderTransaction->getOrder()?->getSalesChannelId())) {
-            $this->logger->info('Payment finalized', [
+            $this->logger->info('Payment finalized and order transaction updated.', [
                 'transaction_id' => $transaction->getOrderTransactionId(),
-                'paystack_reference' => $verificationResult['data']['id'] ?? null,
+                'paystack_transaction_id' => $verificationResult['data']['id'] ?? null,
+                'paystack_reference' => $queryParams['reference'] ?? null,
             ]);
         }
     }
@@ -247,33 +243,19 @@ class PaystackPaymentHandler extends AbstractPaymentHandler
      * @param Context $context
      *
      * @return OrderTransactionEntity
+     *
+     * @deprecated Use OrderTransactionService::get() instead
      */
     public function getOrderTransaction(string $transactionId, Context $context): OrderTransactionEntity
     {
-        $criteria = $this->getCriteria([$transactionId]);
-        $orderTransaction = $this->orderTransactionRepository->search($criteria, $context)->first();
-
-        if (!$orderTransaction instanceof OrderTransactionEntity) {
-            throw PaymentException::asyncProcessInterrupted(
-                $transactionId,
-                'Order transaction with id ' . $transactionId . ' not found'
-            );
-        }
+        $orderTransaction = $this->orderTransactionService->get($transactionId, $context);
 
         if ($this->config->getBool('enableDebugging', $orderTransaction->getOrder()?->getSalesChannelId())) {
-            $this->logger->info('Order transaction found', [
+            $this->logger->info('Order transaction loaded successfully.', [
                 'transaction_id' => $transactionId,
             ]);
         }
 
         return $orderTransaction;
-    }
-
-    private function getCriteria(array $ids = []): Criteria
-    {
-        $criteria = empty($ids) ? new Criteria() : new Criteria($ids);
-        $criteria->addAssociations(['order.currency', 'order.orderCustomer.salutation']);
-
-        return $criteria;
     }
 }

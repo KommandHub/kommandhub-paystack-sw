@@ -1,0 +1,13 @@
+{% block sw_order_detail_content_tabs_extension %}
+    {% block sw_order_detail_content_tabs_paystack %}
+        <sw-tabs-item
+                class="sw-order-detail__tabs-tab-paystack"
+                :route="{ name: 'kommandhub.paystack.detail', params: { id: $route.params.id } }"
+                :title="$t('sw-order.detail.tabPaystack')"
+        >
+            {{ $t('sw-order.detail.tabPaystack') }}
+        </sw-tabs-item>
+    {% endblock %}
+
+    {% parent %}
+{% endblock %}

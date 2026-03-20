@@ -1,0 +1,24 @@
+{
+  "kommandhub-paystack-detail": {
+    "title": "Paystack",
+    "summary": {
+      "chargedAmount": "Abgerechneter Betrag",
+      "paymentChannel": "Zahlungskanal"
+    },
+    "grid": {
+      "reference": "Paystack-Referenz",
+      "transactionId": "Paystack-Transaktions-ID",
+      "processingFee": "Bearbeitungsgebühr",
+      "verifiedAt": "Verifiziert am"
+    },
+    "emptyState": {
+      "title": "Keine Paystack-Transaktion gefunden",
+      "subline": "Diese Bestellung wurde nicht über Paystack abgewickelt oder die Transaktionsdetails sind nicht verfügbar."
+    }
+  },
+  "sw-order": {
+    "detail": {
+      "tabPaystack": "Paystack"
+    }
+  }
+}

@@ -8,8 +8,13 @@ services:
     resource: '../../*'
     exclude: '../../{DependencyInjection,Entity,Migrations,Tests,Kernel.php}'
 
+  Kommandhub\PaystackSW\Service\OrderTransactionService:
+    arguments:
+      $orderTransactionRepository: '@order_transaction.repository'
+
   Kommandhub\PaystackSW\Checkout\Payment\PaystackPaymentHandler:
     arguments:
+      $orderTransactionService: '@Kommandhub\PaystackSW\Service\OrderTransactionService'
       $transactionService: '@Kommandhub\PaystackSW\Service\TransactionService'
       $payloadBuilder: '@Kommandhub\PaystackSW\Service\PayloadBuilder'
     tags:

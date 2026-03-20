@@ -58,11 +58,8 @@ class KommandhubPaystackSW extends Plugin
 
     private function addPaymentMethod(Context $context): void
     {
-        try {
-            if ($this->container === null) {
-                return;
-            }
-        } catch (\Error $e) {
+        /** @phpstan-ignore-next-line */
+        if (!isset($this->container) || $this->container === null) {
             return;
         }
 
@@ -83,8 +80,8 @@ class KommandhubPaystackSW extends Plugin
             [
                 // the identifier will select the payment handler
                 'handlerIdentifier' => PaystackPaymentHandler::class,
-                'name' => 'Paystack payment',
-                'description' => 'Developed with ❤️ by Kommandhub',
+                'name' => 'Pay with Paystack',
+                'description' => 'Securely pay with your card, bank account, or mobile money via Paystack.',
                 'pluginId' => $pluginId,
                 'afterOrderEnabled' => true,
                 'technicalName' => 'kommandhub_paystack_payment',
@@ -98,11 +95,8 @@ class KommandhubPaystackSW extends Plugin
 
     private function setPaymentMethodIsActive(bool $active, Context $context): void
     {
-        try {
-            if ($this->container === null) {
-                return;
-            }
-        } catch (\Error $e) {
+        /** @phpstan-ignore-next-line */
+        if (!isset($this->container) || $this->container === null) {
             return;
         }
 
@@ -126,13 +120,10 @@ class KommandhubPaystackSW extends Plugin
 
     private function getPaymentMethodId(): ?string
     {
-        try {
-            if ($this->container === null) {
-                return null;
-            }
-        } catch (\Error $e) { // @codeCoverageIgnoreStart
+        /** @phpstan-ignore-next-line */
+        if (!isset($this->container) || $this->container === null) {
             return null;
-        } // @codeCoverageIgnoreEnd
+        }
 
         /** @var EntityRepository $paymentMethodRepository */
         $paymentMethodRepository = $this->container->get('payment_method.repository');

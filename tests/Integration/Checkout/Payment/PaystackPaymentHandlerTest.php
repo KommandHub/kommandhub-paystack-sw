@@ -6,6 +6,7 @@ namespace Kommandhub\PaystackSW\Tests\Integration\Checkout\Payment;
 
 use Kommandhub\PaystackSW\Checkout\Payment\PaystackPaymentHandler;
 use Kommandhub\PaystackSW\Service\Config;
+use Kommandhub\PaystackSW\Service\OrderTransactionService;
 use Kommandhub\PaystackSW\Service\PayloadBuilder;
 use Kommandhub\PaystackSW\Service\TransactionService;
 use PHPUnit\Framework\TestCase;
@@ -16,15 +17,13 @@ use Shopware\Core\Checkout\Payment\Cart\PaymentTransactionStruct;
 use Shopware\Core\Checkout\Payment\Cart\PaymentHandler\PaymentHandlerType;
 use Shopware\Core\Checkout\Payment\PaymentException;
 use Shopware\Core\Framework\Context;
-use Shopware\Core\Framework\DataAbstractionLayer\EntityRepository;
-use Shopware\Core\Framework\DataAbstractionLayer\Search\EntitySearchResult;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Kommandhub\Paystack\Exceptions\PaystackException;
 
 class PaystackPaymentHandlerTest extends TestCase
 {
-    private EntityRepository $orderTransactionRepository;
+    private OrderTransactionService $orderTransactionService;
     private TransactionService $transactionService;
     private PayloadBuilder $payloadBuilder;
     private OrderTransactionStateHandler $transactionStateHandler;
@@ -34,7 +33,7 @@ class PaystackPaymentHandlerTest extends TestCase
 
     protected function setUp(): void
     {
-        $this->orderTransactionRepository = $this->createMock(EntityRepository::class);
+        $this->orderTransactionService = $this->createMock(OrderTransactionService::class);
         $this->transactionService = $this->createMock(TransactionService::class);
         $this->payloadBuilder = $this->createMock(PayloadBuilder::class);
         $this->transactionStateHandler = $this->createMock(OrderTransactionStateHandler::class);
@@ -42,7 +41,7 @@ class PaystackPaymentHandlerTest extends TestCase
         $this->logger = $this->createMock(LoggerInterface::class);
 
         $this->handler = new PaystackPaymentHandler(
-            $this->orderTransactionRepository,
+            $this->orderTransactionService,
             $this->transactionService,
             $this->payloadBuilder,
             $this->transactionStateHandler,
@@ -61,10 +60,7 @@ class PaystackPaymentHandlerTest extends TestCase
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
 
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $payload = ['amount' => 10000];
         $this->payloadBuilder->method('build')->willReturn($payload);
@@ -93,10 +89,7 @@ class PaystackPaymentHandlerTest extends TestCase
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
 
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $payload = ['amount' => 10000];
         $this->payloadBuilder->method('build')->willReturn($payload);
@@ -108,7 +101,7 @@ class PaystackPaymentHandlerTest extends TestCase
         $this->transactionService->method('initialize')->willReturn($paystackResponse);
 
         $this->expectException(PaymentException::class);
-        $this->expectExceptionMessage('Failed to initialize payment with Paystack: Invalid API key');
+        $this->expectExceptionMessage('Paystack declined to initialize the payment: Invalid API key');
 
         $this->handler->pay($request, $transaction, $context, null);
     }
@@ -123,10 +116,7 @@ class PaystackPaymentHandlerTest extends TestCase
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
 
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $verificationResult = [
             'status' => true,
@@ -141,7 +131,7 @@ class PaystackPaymentHandlerTest extends TestCase
         $this->transactionService->method('verify')->with('test_ref')->willReturn($verificationResult);
 
         $this->transactionStateHandler->expects($this->once())->method('paid');
-        $this->orderTransactionRepository->expects($this->once())->method('update');
+        $this->orderTransactionService->expects($this->once())->method('updateCustomFields');
 
         $this->handler->finalize($request, $transaction, $context);
     }
@@ -156,10 +146,7 @@ class PaystackPaymentHandlerTest extends TestCase
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
 
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $this->expectException(PaymentException::class);
 
@@ -180,9 +167,7 @@ class PaystackPaymentHandlerTest extends TestCase
 
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $this->payloadBuilder->method('build')->willThrowException(new \RuntimeException('Build failed'));
 
@@ -201,15 +186,13 @@ class PaystackPaymentHandlerTest extends TestCase
 
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $this->payloadBuilder->method('build')->willReturn(['payload']);
         $this->transactionService->method('initialize')->willThrowException(new PaystackException('Paystack error'));
 
         $this->expectException(PaymentException::class);
-        $this->expectExceptionMessage('An error occurred during the communication with external payment gateway');
+        $this->expectExceptionMessage('A communication error occurred with the payment gateway');
 
         $this->handler->pay($request, $transaction, $context, null);
     }
@@ -223,9 +206,7 @@ class PaystackPaymentHandlerTest extends TestCase
 
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $this->transactionService->method('verify')->willReturn(['status' => false, 'message' => 'Verification failed']);
 
@@ -240,12 +221,10 @@ class PaystackPaymentHandlerTest extends TestCase
         $context = Context::createDefaultContext();
         $transactionId = 'non-existent-id';
 
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn(null);
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willThrowException(PaymentException::asyncProcessInterrupted($transactionId, 'not found'));
 
         $this->expectException(PaymentException::class);
-        $this->expectExceptionMessage('Order transaction with id non-existent-id not found');
+        $this->expectExceptionMessage('not found');
 
         $this->handler->getOrderTransaction($transactionId, $context);
     }
@@ -262,9 +241,7 @@ class PaystackPaymentHandlerTest extends TestCase
 
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $this->payloadBuilder->method('build')->willReturn(['payload']);
         $this->transactionService->method('initialize')->willReturn(['status' => true, 'data' => ['authorization_url' => 'http://url']]);
@@ -285,9 +262,7 @@ class PaystackPaymentHandlerTest extends TestCase
 
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         // RuntimeException in pay
         $this->payloadBuilder->method('build')->willThrowException(new \RuntimeException('Build failed'));
@@ -320,19 +295,7 @@ class PaystackPaymentHandlerTest extends TestCase
         } catch (PaymentException) {
         }
     }
-    public function testGetCriteria(): void
-    {
-        $reflection = new \ReflectionClass($this->handler);
-        $method = $reflection->getMethod('getCriteria');
-        $method->setAccessible(true);
 
-        $criteria = $method->invoke($this->handler, ['id1', 'id2']);
-        $this->assertEquals(['id1', 'id2'], $criteria->getIds());
-        $this->assertTrue($criteria->hasAssociation('order'));
-
-        $criteriaEmpty = $method->invoke($this->handler, []);
-        $this->assertEmpty($criteriaEmpty->getIds());
-    }
     public function testPayFailsWhenAuthorizationUrlIsMissing(): void
     {
         $context = Context::createDefaultContext();
@@ -342,15 +305,13 @@ class PaystackPaymentHandlerTest extends TestCase
 
         $orderTransaction = $this->createMock(OrderTransactionEntity::class);
         $orderTransaction->method('getId')->willReturn($transactionId);
-        $searchResult = $this->createMock(EntitySearchResult::class);
-        $searchResult->method('first')->willReturn($orderTransaction);
-        $this->orderTransactionRepository->method('search')->willReturn($searchResult);
+        $this->orderTransactionService->method('get')->willReturn($orderTransaction);
 
         $this->payloadBuilder->method('build')->willReturn(['payload']);
         $this->transactionService->method('initialize')->willReturn(['status' => true, 'data' => []]);
 
         $this->expectException(PaymentException::class);
-        $this->expectExceptionMessage('authorization_url is missing');
+        $this->expectExceptionMessage('Paystack did not return a checkout URL');
 
         $this->handler->pay($request, $transaction, $context, null);
     }

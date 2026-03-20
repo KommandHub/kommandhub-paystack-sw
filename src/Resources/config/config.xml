@@ -3,34 +3,48 @@
         xsi:noNamespaceSchemaLocation="https://raw.githubusercontent.com/shopware/shopware/6.7/src/Core/System/SystemConfig/Schema/config.xsd">
 
     <card>
-        <title>Live configuration</title>
+        <title>Live Configuration</title>
+        <title lang="de-DE">Live-Konfiguration</title>
 
         <input-field type="password">
             <name>apiSecretKey</name>
-            <label>Secret Key</label>
+            <label>Live Secret Key</label>
+            <label lang="de-DE">Live Secret Key</label>
             <helpText>
-                Your Paystack secret API key. Keep this secure and never share it publicly.
+                Your Paystack live secret API key (starts with sk_live_). Keep this secure and never share it publicly.
+            </helpText>
+            <helpText lang="de-DE">
+                Ihr Paystack Live-Secret-API-Schlüssel (beginnt mit sk_live_). Halten Sie diesen sicher und teilen Sie ihn niemals öffentlich.
             </helpText>
             <copyable>true</copyable>
         </input-field>
     </card>
 
     <card>
-        <title>Sandbox configuration</title>
+        <title>Sandbox / Test Configuration</title>
+        <title lang="de-DE">Sandbox- / Testkonfiguration</title>
 
         <input-field type="bool">
             <name>enableSandbox</name>
-            <label>Enable Sandbox</label>
+            <label>Enable Sandbox Mode</label>
+            <label lang="de-DE">Sandbox-Modus aktivieren</label>
             <helpText>
-                Enable this option to use Paystack's sandbox environment for testing payments.
+                Switch to Paystack's test environment. Payments will not be processed for real. Disable before going live.
+            </helpText>
+            <helpText lang="de-DE">
+                Wechselt zur Paystack-Testumgebung. Zahlungen werden nicht real verarbeitet. Vor dem Live-Betrieb deaktivieren.
             </helpText>
         </input-field>
 
         <input-field type="password">
             <name>apiSecretKeySandbox</name>
-            <label>Secret Key</label>
+            <label>Test Secret Key</label>
+            <label lang="de-DE">Test-Secret-Key</label>
             <helpText>
-                Your Paystack secret API key. Keep this secure and never share it publicly.
+                Your Paystack test secret API key (starts with sk_test_). Used only when Sandbox Mode is enabled.
+            </helpText>
+            <helpText lang="de-DE">
+                Ihr Paystack Test-Secret-API-Schlüssel (beginnt mit sk_test_). Wird nur bei aktiviertem Sandbox-Modus verwendet.
             </helpText>
             <copyable>true</copyable>
         </input-field>
@@ -38,13 +52,18 @@
 
     <card>
         <title>Debugging</title>
+        <title lang="de-DE">Fehlerdiagnose</title>
 
         <input-field type="bool">
             <name>enableDebugging</name>
-            <label>Enable error logging</label>
+            <label>Enable Detailed Logging</label>
+            <label lang="de-DE">Detaillierte Protokollierung aktivieren</label>
             <defaultValue>false</defaultValue>
             <helpText>
-                Enable detailed error logging for debugging purposes. Disable in production environments.
+                Logs detailed information about payment events to help diagnose issues. Should be disabled in production to avoid exposing sensitive data.
+            </helpText>
+            <helpText lang="de-DE">
+                Protokolliert detaillierte Informationen zu Zahlungsereignissen zur Fehlerdiagnose. Im Produktivbetrieb deaktivieren, um sensible Daten zu schützen.
             </helpText>
         </input-field>
     </card>

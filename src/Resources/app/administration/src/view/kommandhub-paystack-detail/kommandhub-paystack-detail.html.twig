@@ -1,0 +1,128 @@
+{% block sw_order_document_card %}
+    {% block kommandhub_paystack_detail_card %}
+    <mt-card
+            position-identifier="sw-order-document-card"
+            class="kommandhub-paystack-detail-card"
+    >
+        {% block kommandhub_paystack_detail_card_grid %}
+        <template #grid>
+            {% block kommandhub_paystack_detail_content %}
+            <sw-container
+                    v-if="paystackTransaction"
+                    columns="1fr"
+                    gap="24px"
+                    class="kommandhub-paystack-detail-content"
+            >
+                {% block kommandhub_paystack_detail_header %}
+                <div class="kommandhub-paystack-detail-header">
+                    {% block kommandhub_paystack_detail_icon %}
+                    <img
+                            v-if="paystackIcon"
+                            :src="paystackIcon"
+                            class="kommandhub-paystack-detail-card__icon"
+                            alt="Paystack logo"
+                    >
+                    {% endblock %}
+
+                    {% block kommandhub_paystack_detail_summary %}
+                    <div class="kommandhub-paystack-detail-summary">
+                        {% block kommandhub_paystack_detail_summary_amount %}
+                        <div class="kommandhub-paystack-detail-summary__item">
+                            <span class="kommandhub-paystack-detail-summary__label">{{ $t('kommandhub-paystack-detail.summary.chargedAmount') }}</span>
+                            <span class="kommandhub-paystack-detail-summary__value">
+                                {{ currencyFilter(
+                                    paystackTransaction.customFields.paystack_amount,
+                                    paystackTransaction.customFields.paystack_currency
+                                ) }}
+                            </span>
+                        </div>
+                        {% endblock %}
+
+                        {% block kommandhub_paystack_detail_summary_channel %}
+                        <div class="kommandhub-paystack-detail-summary__item kommandhub-paystack-detail-summary__item--right">
+                            <span class="kommandhub-paystack-detail-summary__label">{{ $t('kommandhub-paystack-detail.summary.paymentChannel') }}</span>
+                            <sw-label
+                                    variant="info"
+                                    appearance="pill"
+                                    size="small"
+                            >
+                                {{ paystackTransaction.customFields.paystack_payment_type }}
+                            </sw-label>
+                        </div>
+                        {% endblock %}
+                    </div>
+                    {% endblock %}
+                </div>
+                {% endblock %}
+
+                {% block kommandhub_paystack_detail_grid %}
+                <sw-container
+                        columns="1fr 1fr"
+                        gap="32px"
+                        class="kommandhub-paystack-detail-grid"
+                >
+                    {% block kommandhub_paystack_detail_list_left %}
+                    <sw-description-list
+                            grid="1fr"
+                            class="kommandhub-paystack-detail-list"
+                    >
+                        {% block kommandhub_paystack_detail_list_left_reference %}
+                        <dt>{{ $t('kommandhub-paystack-detail.grid.reference') }}</dt>
+                        <dd class="kommandhub-paystack-detail-copyable">
+                            {{ paystackTransaction.customFields.paystack_reference }}
+                        </dd>
+                        {% endblock %}
+
+                        {% block kommandhub_paystack_detail_list_left_transaction_id %}
+                        <dt>{{ $t('kommandhub-paystack-detail.grid.transactionId') }}</dt>
+                        <dd>{{ paystackTransaction.customFields.paystack_transaction_id }}</dd>
+                        {% endblock %}
+                    </sw-description-list>
+                    {% endblock %}
+
+                    {% block kommandhub_paystack_detail_list_right %}
+                    <sw-description-list
+                            grid="1fr"
+                            class="kommandhub-paystack-detail-list"
+                    >
+                        {% block kommandhub_paystack_detail_list_right_fee %}
+                        <dt>{{ $t('kommandhub-paystack-detail.grid.processingFee') }}</dt>
+                        <dd>
+                            {{ currencyFilter(
+                                paystackTransaction.customFields.paystack_transaction_fee,
+                                paystackTransaction.customFields.paystack_currency
+                            ) }}
+                        </dd>
+                        {% endblock %}
+
+                        {% block kommandhub_paystack_detail_list_right_verified_at %}
+                        <dt>{{ $t('kommandhub-paystack-detail.grid.verifiedAt') }}</dt>
+                        <dd>
+                            <sw-time-ago
+                                    :date="paystackTransaction.customFields.paystack_verified_at"
+                                    :date-time-format="{ month: '2-digit', day: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }"
+                            />
+                        </dd>
+                        {% endblock %}
+                    </sw-description-list>
+                    {% endblock %}
+                </sw-container>
+                {% endblock %}
+
+            </sw-container>
+            {% endblock %}
+
+            {% block kommandhub_paystack_detail_empty_state %}
+            <sw-empty-state
+                    v-else
+                    :title="$t('kommandhub-paystack-detail.emptyState.title')"
+                    :subline="$t('kommandhub-paystack-detail.emptyState.subline')"
+                    icon="regular-credit-card"
+                    class="kommandhub-paystack-detail-empty-state"
+            />
+            {% endblock %}
+        </template>
+        {% endblock %}
+    </mt-card>
+    {% endblock %}
+{% endblock %}

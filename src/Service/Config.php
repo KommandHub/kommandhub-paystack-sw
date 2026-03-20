@@ -1,15 +1,14 @@
 <?php
 
+declare(strict_types=1);
+
 namespace Kommandhub\PaystackSW\Service;
 
 use Shopware\Core\System\SystemConfig\SystemConfigService;
 
 class Config
 {
-    /**
-     * Prefix for all configuration keys related to this plugin.
-     */
-    final public const KEY = 'KommandhubPaystackSW.config.';
+    public const KEY = 'KommandhubPaystackSW.config.';
 
     /**
      * @param SystemConfigService $systemConfigService Shopware system config service.

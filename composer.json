@@ -3,6 +3,7 @@
     "description": "Integrates the Paystack payment gateway into Shopware 6.",
     "type": "shopware-platform-plugin",
     "license": "MIT",
+    "version": "1.0.0",
     "keywords": [
         "shopware",
         "shopware6",
@@ -31,7 +32,6 @@
             "role": "Developer"
         }
     ],
-    "version": "1.0.1",
     "require": {
         "shopware/core": "~6.6.0 || ~6.7.0",
         "kommandhub/paystack": "^1.0"

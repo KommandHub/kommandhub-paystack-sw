@@ -1,141 +1,255 @@
 # Paystack Plugin for Shopware 6
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Shopware 6.6+](https://img.shields.io/badge/Shopware-6.6%2B-blue.svg)](https://shopware.com)
-[![Paystack](https://img.shields.io/badge/Payment-Paystack-blueviolet.svg)](https://paystack.com)
+[![Shopware](https://img.shields.io/badge/Shopware-6.6%2B-blue.svg)](https://shopware.com)
+[![Payment](https://img.shields.io/badge/Payment-Paystack-blueviolet.svg)](https://paystack.com)
 
 ![Shopware Paystack Logo](src/Resources/config/shopware.webp)
 
-The **Paystack Payment Plugin** integrates the Paystack payment gateway into Shopware 6, allowing merchants in Africa (Nigeria, Ghana, Kenya, South Africa, and Cote d'Ivoire) to accept payments via credit/debit cards, bank transfers, USSD, and more.
+A modern **Shopware 6 payment plugin** that integrates **Paystack**, enabling merchants across Africa to accept secure online payments via multiple channels.
 
-Developed with ❤️ by [Kommandhub Limited](https://kommandhub.com).
-
----
-
-## 🚀 Features
-
-- **Seamless Integration**: Fully integrates with Shopware 6's checkout flow.
-- **Paystack Hosted Checkout**: Redirects customers to a secure Paystack payment page.
-- **Support for Multiple Payment Channels**: Supports Cards, Bank Transfers, USSD, QR codes, and more (depending on your Paystack account configuration).
-- **Sandbox Mode**: Easy testing with Paystack's sandbox environment.
-- **Automatic Order Status Updates**: Automatically transitions order transaction states (e.g., to `Paid`) upon successful verification.
-- **Detailed Logging**: Optional debugging mode to log API communications and errors.
-- **Custom Metadata**: Stores Paystack reference, transaction ID, and fees directly within the Shopware order transaction.
+Developed with ❤️ by [Kommandhub Limited](https://kommandhub.com)
 
 ---
 
-## 📋 Requirements
+# Table of Contents
 
-- **Shopware**: `~6.6.0` or `~6.7.0`
-- **PHP**: `^8.2`
-- **Paystack Account**: You must have an active [Paystack account](https://dashboard.paystack.com/#/signup).
-- **Composer**: To manage dependencies.
+* [Features](#features)
+* [Supported Payment Channels](#supported-payment-channels)
+* [Requirements](#requirements)
+* [Installation](#installation)
+
+   * [Via Composer](#via-composer-recommended)
+   * [Manual Installation](#manual-installation-github-upload)
+* [Configuration](#configuration)
+* [Payment Flow](#payment-flow)
+* [Development & Testing](#development--testing)
+* [Compatibility](#compatibility)
+* [Troubleshooting](#troubleshooting)
+* [Support](#support)
+* [License](#license)
 
 ---
 
-## 🛠 Installation
+# Features
 
-### Via Composer (Recommended)
+* Seamless integration with **Shopware 6 checkout**
+* Secure **Paystack hosted payment page**
+* Automatic **order transaction status updates**
+* Built-in **sandbox mode** for testing
+* Optional **debug logging** for troubleshooting
+* Stores Paystack **transaction references and metadata**
+* Clean and native **Shopware payment method integration**
 
-1. Go to your Shopware project root.
-2. Require the plugin using Composer:
-   ```bash
-   composer require kommandhub/paystack-sw
+---
+
+# Supported Payment Channels
+
+Depending on your Paystack configuration:
+
+* Debit & Credit Cards
+* Bank Transfers
+* USSD
+* QR Codes
+* Mobile Money (Ghana, Kenya, etc.)
+
+---
+
+# Requirements
+
+* **Shopware**: `~6.6.0` or `~6.7.0`
+* **PHP**: `^8.2`
+* **Paystack Account**: [https://dashboard.paystack.com/#/signup](https://dashboard.paystack.com/#/signup)
+* **Composer**
+
+---
+
+# Installation
+
+## Via Composer (Recommended)
+
+```bash
+composer require kommandhub/paystack-sw
+bin/console plugin:refresh
+bin/console plugin:install --activate KommandhubPaystackSW
+bin/console cache:clear
+```
+
+---
+
+## Manual Installation (GitHub Upload)
+
+1. Download ZIP from your repository
+
+2. Ensure correct structure:
+
    ```
-3. Refresh the plugin list:
-   ```bash
-   bin/console plugin:refresh
-   ```
-4. Install and activate the plugin:
-   ```bash
-   bin/console plugin:install --activate KommandhubPaystackSW
-   ```
-5. Clear the cache:
-   ```bash
-   bin/console cache:clear
+   KommandhubPaystackSW.zip
+   ├── src/
+   ├── composer.json
    ```
 
-### Manual Installation (GitHub Upload)
+3. Upload via:
 
-If you prefer to install the plugin manually via the Shopware Administration:
+   **Administration → Extensions → My Extensions → Upload Extension**
 
-1. **Download the Plugin**:
-   - Go to the [GitHub repository](https://github.com/KommandHub/kommandhub-paystack-sw) (replace with the actual URL).
-   - Click on the **Code** button and select **Download ZIP**.
-   - Alternatively, download a specific version from the **Releases** page.
-2. **Rename the ZIP (if necessary)**:
-   - Ensure the ZIP file is named `KommandhubPaystackSW.zip`.
-   - The contents of the ZIP should be at the root of the archive (i.e., opening the ZIP should show `src`, `composer.json`, etc.).
-3. **Upload via Admin**:
-   - Log in to your Shopware Administration.
-   - Navigate to **Extensions > My extensions**.
-   - Click the **Upload extension** button in the top right corner.
-   - Select the `KommandhubPaystackSW.zip` file.
-4. **Install & Activate**:
-   - Once uploaded, find **Paystack for Shopware** in the list.
-   - Click **Install** and then toggle the **Active** switch to `on`.
+4. Install and activate plugin
 
 ---
 
-## ⚙️ Configuration
+# Configuration
 
-Once installed, navigate to the Shopware Administration:
+Navigate to:
 
-1. Go to **Extensions > My extensions**.
-2. Find **Paystack for Shopware** and click the three dots `...` -> **Configuration**.
-
-### Live Configuration
-- **Secret Key**: Enter your Paystack Live Secret Key (starts with `sk_live_`).
-
-### Sandbox Configuration
-- **Enable Sandbox**: Toggle this switch to `on` for testing.
-- **Secret Key**: Enter your Paystack Test Secret Key (starts with `sk_test_`).
-
-### Debugging
-- **Enable error logging**: If enabled, the plugin will log detailed information to the Shopware system logs (`var/log/`). Highly recommended for troubleshooting.
-
-### Payment Method Activation
-After configuring the API keys:
-1. Go to **Settings > Shop > Payment Methods**.
-2. Find **Paystack payment** and ensure it is **Active**.
-3. Assign the payment method to your **Sales Channels** under **Settings > Shop > Sales Channels**.
+**Administration → Extensions → My Extensions → Paystack → Configuration**
 
 ---
 
-## 🧪 Development & Testing
+## Live Mode
 
-The plugin comes with a `Makefile` to simplify development tasks.
+* Enter **Live Secret Key** (`sk_live_...`)
 
-### Running Tests
-To run unit and integration tests (requires a running Shopware environment):
+---
+
+## Sandbox Mode
+
+* Enable sandbox
+* Enter **Test Secret Key** (`sk_test_...`)
+
+---
+
+## Debugging
+
+Enable logging to write detailed logs to:
+
+```
+var/log/
+```
+
+Recommended for troubleshooting.
+
+---
+
+## Activate Payment Method
+
+1. Go to:
+
+   ```
+   Settings → Shop → Payment Methods
+   ```
+
+2. Enable **Paystack Payment**
+
+3. Assign it to your **Sales Channel**
+
+---
+
+# Payment Flow
+
+```text
+Customer selects Paystack
+        ↓
+Redirect to Paystack Checkout
+        ↓
+Customer completes payment
+        ↓
+Redirect back to Shopware
+        ↓
+Plugin verifies transaction
+        ↓
+Order marked as Paid
+```
+
+---
+
+# Development & Testing
+
+To ensure a consistent environment, tests and development tools should be run inside the plugin's Docker container.
+
+### 1. Start the Container
+
+```bash
+make up
+```
+
+### 2. Enter the Container Shell
+
+```bash
+make shell
+```
+
+### 3. Run Development Commands
+
+Once inside the container, you can execute the following commands:
+
+#### Run Tests
 ```bash
 make test
 ```
 
-### Code Style & Analysis
-Run PHP CS Fixer:
+#### Test Coverage
 ```bash
-make style
-```
-Run PHPStan:
-```bash
-make static-analysis
+make test-coverage
 ```
 
-### Coverage
-Generate a test coverage report:
+#### Static Analysis (PHPStan)
 ```bash
-make coverage
+make analyse
+```
+
+#### Code Style (PHP-CS-Fixer)
+```bash
+make cs
+make cs-fix
 ```
 
 ---
 
-## 📄 License
+# Compatibility
 
-This project is licensed under the MIT License - see the `LICENSE` file for details.
+| Plugin Version | Shopware Version |
+| -------------- | ---------------- |
+| ^1.0           | 6.6              |
+| ^2.0           | 6.7              |
 
 ---
 
-## 🤝 Support
+# Troubleshooting
 
-For support, please contact [admin@kommandhub.com](mailto:admin@kommandhub.com) or visit our website [kommandhub.com](https://kommandhub.com).
+### Payment not updating?
+
+* Ensure webhook/verification flow is working
+* Check logs in `var/log/`
+* Confirm correct API keys (test vs live)
+
+---
+
+### Plugin not visible?
+
+```bash
+bin/console plugin:refresh
+```
+
+---
+
+### Cache issues?
+
+```bash
+bin/console cache:clear
+```
+
+---
+
+# Support
+
+For support:
+
+* Email: [admin@kommandhub.com](mailto:admin@kommandhub.com)
+* Website: [https://kommandhub.com](https://kommandhub.com)
+
+---
+
+# License
+
+This project is licensed under the **MIT License**.
+See the [LICENSE](LICENSE) file for details.

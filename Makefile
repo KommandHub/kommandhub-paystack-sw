@@ -8,12 +8,19 @@ COLOR_COMMENT=\033[33m
 
 # Configuration Variable
 CONTAINER_NAME ?= kommandhub-paystack-shopware
-PLUGIN_DIR ?= ./custom/plugins/KommandhubPaystackSW
 PLUGIN_NAME ?= KommandhubPaystackSW
+PLUGIN_REL_PATH := custom/plugins/$(PLUGIN_NAME)
+
+# Determine the absolute path to the plugin directory
+PLUGIN_ABS_PATH := $(shell cd $(dir $(lastword $(MAKEFILE_LIST))) && pwd)
+PROJECT_ROOT := $(shell cd $(PLUGIN_ABS_PATH)/../../.. && pwd)
 
 # Detect if we're running inside Docker container
 IS_DOCKER := $(shell test -f /.dockerenv && echo true || echo false)
 DOCKER_RUN := $(if $(filter true,$(IS_DOCKER)),,docker exec $(CONTAINER_NAME))
+
+# Path inside container (assuming standard Shopware layout)
+CONTAINER_PLUGIN_DIR := /var/www/html/$(PLUGIN_REL_PATH)
 
 help:
 	@echo "Available commands:"
@@ -33,7 +40,8 @@ help:
 	@echo ""
 	@echo "Configuration:"
 	@echo "  CONTAINER_NAME=$(CONTAINER_NAME)"
-	@echo "  PLUGIN_DIR=$(PLUGIN_DIR)"
+	@echo "  PLUGIN_NAME=$(PLUGIN_NAME)"
+	@echo "  PLUGIN_ABS_PATH=$(PLUGIN_ABS_PATH)"
 	@echo "  Running in container: $(IS_DOCKER)"
 
 up: up-quick wait-for-container
@@ -77,34 +85,34 @@ prepare:
 
 test:
 	@echo "Running PHPUnit tests..."
-	$(DOCKER_RUN) ./vendor/bin/phpunit \
+	$(DOCKER_RUN) bash -c "cd $(CONTAINER_PLUGIN_DIR) && PROJECT_ROOT=/var/www/html ./vendor/bin/phpunit \
 		--testdox \
-		--configuration="$(PLUGIN_DIR)" \
+		--configuration=. \
 		--colors=always \
-		${FILTER}
+		${FILTER}"
 
 test-coverage:
 	@echo "Running tests with coverage..."
-	$(DOCKER_RUN) ./vendor/bin/phpunit --testdox \
-		--coverage-html $(PLUGIN_DIR)/build/coverage \
+	$(DOCKER_RUN) bash -c "cd $(CONTAINER_PLUGIN_DIR) && PROJECT_ROOT=/var/www/html ./vendor/bin/phpunit --testdox \
+		--coverage-html build/coverage \
 		--coverage-text \
-		--configuration="$(PLUGIN_DIR)" \
-		--coverage-clover $(PLUGIN_DIR)/build/logs/clover.xml \
-		--coverage-cobertura $(PLUGIN_DIR)/build/logs/cobertura.xml \
+		--configuration=. \
+		--coverage-clover build/logs/clover.xml \
+		--coverage-cobertura build/logs/cobertura.xml \
 		--colors=always \
-		${FILTER}
+		${FILTER}"
 
 cs:
 	@echo "Running code style checks..."
-	cd $(PLUGIN_DIR) && $(DOCKER_RUN) ./vendor/bin/php-cs-fixer fix --dry-run --diff
+	$(DOCKER_RUN) bash -c "cd $(CONTAINER_PLUGIN_DIR) && PROJECT_ROOT=/var/www/html ./vendor/bin/php-cs-fixer fix --dry-run --diff"
 
 cs-fix:
 	@echo "Fixing code style issues..."
-	cd $(PLUGIN_DIR) && $(DOCKER_RUN) ./vendor/bin/php-cs-fixer fix
+	$(DOCKER_RUN) bash -c "cd $(CONTAINER_PLUGIN_DIR) && PROJECT_ROOT=/var/www/html ./vendor/bin/php-cs-fixer fix"
 
 analyse:
 	@echo "Running PHPStan analysis..."
-	cd $(PLUGIN_DIR) && $(DOCKER_RUN) ./vendor/bin/phpstan analyse src -c phpstan.dist.neon --memory-limit=1G
+	$(DOCKER_RUN) bash -c "cd $(CONTAINER_PLUGIN_DIR) && PROJECT_ROOT=/var/www/html ./vendor/bin/phpstan analyse src -c phpstan.dist.neon --memory-limit=1G"
 
 shell:
 	@if [ "$(IS_DOCKER)" = "true" ]; then \
@@ -128,7 +136,7 @@ clean:
 	@if [ "$(IS_DOCKER)" = "true" ]; then \
 		rm -rf build/ vendor/ composer.lock; \
 	else \
-		docker exec $(CONTAINER_NAME) rm -rf build/ vendor/ composer.lock; \
+		docker exec $(CONTAINER_NAME) bash -c "cd $(CONTAINER_PLUGIN_DIR) && rm -rf build/ vendor/ composer.lock"; \
 	fi
 
 clean-all: down

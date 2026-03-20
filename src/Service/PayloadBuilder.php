@@ -66,7 +66,7 @@ readonly class PayloadBuilder
         // The amount is multiplied by 100 to convert from the major currency unit (e.g., Naira)
         // to the minor unit (e.g., kobo) as expected by Paystack.
         return [
-            'amount' => (int)($orderTransaction->getAmount()->getTotalPrice() * 100),
+            'amount' => (int)round($orderTransaction->getAmount()->getTotalPrice() * 100),
             'currency' => $currency->getIsoCode(),
             'email' => $customer->getEmail(),
             'callback_url' => $returnUrl,
