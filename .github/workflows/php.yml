@@ -40,7 +40,14 @@ jobs:
       run: composer install --prefer-dist --no-progress
 
     - name: Run test suite
-      run: ./vendor/bin/phpunit --testdox
+      run: |
+        mkdir -p shopware/custom/plugins/KommandhubPaystackSW
+        shopt -s dotglob
+        cp -R * shopware/custom/plugins/KommandhubPaystackSW/
+        cd shopware/custom/plugins/KommandhubPaystackSW
+        PROJECT_ROOT=$GITHUB_WORKSPACE/shopware ./vendor/bin/phpunit --testdox
+      env:
+        DATABASE_URL: "sqlite://:memory:"
 
     - name: Run static analysis
       run: ./vendor/bin/phpstan analyse src -c phpstan.dist.neon --no-progress
