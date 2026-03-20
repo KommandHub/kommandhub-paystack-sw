@@ -45,11 +45,12 @@ jobs:
         shopt -s dotglob
         cp -R * ../shopware/custom/plugins/KommandhubPaystackSW/
         cd ../shopware
+        mkdir -p var
         ln -s custom/plugins/KommandhubPaystackSW/vendor vendor
         cd custom/plugins/KommandhubPaystackSW
         PROJECT_ROOT=$GITHUB_WORKSPACE/../shopware ./vendor/bin/phpunit --testdox
       env:
-        DATABASE_URL: "sqlite://:memory:"
+        DATABASE_URL: "sqlite://localhost/var/test.sqlite"
 
     - name: Run static analysis
       run: ./vendor/bin/phpstan analyse src -c phpstan.dist.neon --no-progress
