@@ -3,6 +3,7 @@
 // If running in CI → skip Shopware bootstrap
 if (getenv('CI') === 'true') {
     require __DIR__ . '/../vendor/autoload.php';
+
     return;
 }
 
