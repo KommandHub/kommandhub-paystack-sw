@@ -41,11 +41,11 @@ jobs:
 
     - name: Run test suite
       run: |
-        mkdir -p shopware/custom/plugins/KommandhubPaystackSW
+        mkdir -p ../shopware/custom/plugins/KommandhubPaystackSW
         shopt -s dotglob
-        cp -R * shopware/custom/plugins/KommandhubPaystackSW/
-        cd shopware/custom/plugins/KommandhubPaystackSW
-        PROJECT_ROOT=$GITHUB_WORKSPACE/shopware ./vendor/bin/phpunit --testdox
+        cp -R * ../shopware/custom/plugins/KommandhubPaystackSW/
+        cd ../shopware/custom/plugins/KommandhubPaystackSW
+        PROJECT_ROOT=$GITHUB_WORKSPACE/../shopware ./vendor/bin/phpunit --testdox
       env:
         DATABASE_URL: "sqlite://:memory:"
 
