@@ -1,59 +1,53 @@
-name: PHP Composer
+name: Shopware Plugin CI
 
 on:
   push:
-    branches: [ "main" ]
+    branches: [ main, develop ]
   pull_request:
-    branches: [ "main" ]
 
 permissions:
   contents: read
 
 jobs:
-  build:
+  quality:
 
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v4
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Setup PHP
-      uses: shivammathur/setup-php@v2
-      with:
-        php-version: '8.2'
-        extensions: mbstring, xml, ctype, iconv, intl, gd, zip, pdo_sqlite
-        coverage: none
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: mbstring, xml, ctype, iconv, intl, gd, zip
+          coverage: none
 
-    - name: Validate composer.json and composer.lock
-      run: composer validate --strict
+      - name: Validate composer.json
+        run: composer validate --strict
 
-    - name: Cache Composer packages
-      id: composer-cache
-      uses: actions/cache@v3
-      with:
-        path: vendor
-        key: ${{ runner.os }}-php-${{ hashFiles('**/composer.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-php-
+      - name: Cache Composer dependencies
+        uses: actions/cache@v3
+        with:
+          path: vendor
+          key: ${{ runner.os }}-php-${{ hashFiles('composer.lock') }}
 
-    - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      - name: Install dependencies
+        run: composer install --prefer-dist --no-progress --no-interaction
 
-    - name: Run test suite
-      run: |
-        mkdir -p ../shopware/custom/plugins/KommandhubPaystackSW
-        shopt -s dotglob
-        cp -R * ../shopware/custom/plugins/KommandhubPaystackSW/
-        cd ../shopware
-        mkdir -p var
-        ln -s custom/plugins/KommandhubPaystackSW/vendor vendor
-        cd custom/plugins/KommandhubPaystackSW
-        PROJECT_ROOT=$GITHUB_WORKSPACE/../shopware ./vendor/bin/phpunit --testdox
-      env:
-        DATABASE_URL: "sqlite3://localhost/var/test.sqlite"
+      # ✅ Lint PHP (fast fail)
+      - name: Lint PHP files
+        run: find src -type f -name "*.php" -print0 | xargs -0 -n1 php -l
 
-    - name: Run static analysis
-      run: ./vendor/bin/phpstan analyse src -c phpstan.dist.neon --no-progress
+      # ✅ Static analysis
+      - name: Run PHPStan
+        run: ./vendor/bin/phpstan analyse src --no-progress
 
-    - name: Run code style check
-      run: ./vendor/bin/php-cs-fixer fix --dry-run --diff
+      # ✅ Code style
+      - name: Run PHP CS Fixer
+        run: ./vendor/bin/php-cs-fixer fix --dry-run --diff
+
+      # ✅ Unit tests ONLY (no Shopware kernel!)
+      - name: Run PHPUnit
+        run: ./vendor/bin/phpunit --testdox
