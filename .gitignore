@@ -45,7 +45,3 @@ Thumbs.db
 *.log
 *.tmp
 *.cache
-
-# Vite
-/src/Resources/public/administration/.vite
-/src/Resources/public/administration/assets

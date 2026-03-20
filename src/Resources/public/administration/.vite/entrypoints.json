@@ -1,0 +1,25 @@
+{
+  "base": "/bundles/kommandhubpaystacksw/administration/",
+  "entryPoints": {
+    "kommandhub-paystack-s-w": {
+      "css": [
+        "/bundles/kommandhubpaystacksw/administration/assets/kommandhub-paystack-s-w-Bn1Vf-VS.css"
+      ],
+      "dynamic": [],
+      "js": [
+        "/bundles/kommandhubpaystacksw/administration/assets/kommandhub-paystack-s-w-DZ8nxoYp.js"
+      ],
+      "legacy": false,
+      "preload": []
+    }
+  },
+  "legacy": false,
+  "metadatas": {},
+  "version": [
+    "7.1.0",
+    7,
+    1,
+    0
+  ],
+  "viteServer": null
+}

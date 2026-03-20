@@ -1,0 +1,11 @@
+{
+  "main.js": {
+    "file": "assets/kommandhub-paystack-s-w-DZ8nxoYp.js",
+    "name": "kommandhub-paystack-s-w",
+    "src": "main.js",
+    "isEntry": true,
+    "css": [
+      "assets/kommandhub-paystack-s-w-Bn1Vf-VS.css"
+    ]
+  }
+}
