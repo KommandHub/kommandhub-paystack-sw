@@ -50,4 +50,4 @@ jobs:
 
       # ✅ Unit tests ONLY (no Shopware kernel!)
       - name: Run PHPUnit
-        run: ./vendor/bin/phpunit --testdox
+        run: ./vendor/bin/phpunit tests/Unit --testdox
