@@ -4,7 +4,7 @@
 [![Shopware](https://img.shields.io/badge/Shopware-6.6%2B-blue.svg)](https://shopware.com)
 [![Payment](https://img.shields.io/badge/Payment-Paystack-blueviolet.svg)](https://paystack.com)
 
-![Shopware Paystack Logo](src/Resources/config/shopware.webp)
+![Shopware Paystack Logo](src/Resources/config/shopware.png)
 
 A modern **Shopware 6 payment plugin** that integrates **Paystack**, enabling merchants across Africa to accept secure online payments via multiple channels.
 
